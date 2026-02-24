@@ -48,7 +48,21 @@ def handler(event, context):
     markdown = {"content": content}
     logger.info(f'markdown = {markdown}')
 
+
+    payload = {
+        "key": heimdallr_GROUP_KEY,
+        "title": title,
+        "msg_type": msg_type,
+        "markdown": markdown
+    }
+
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {heimdallr_TOKEN}"
+    }
+
+
     return {
         'statusCode': 200,
-        'body': f'body = {body}, heimdallr_URL = {heimdallr_URL}, heimdallr_TOKEN = {heimdallr_TOKEN}'
+        'body': requests.post(heimdallr_URL, json=payload, headers=headers, timeout=10)
     }
