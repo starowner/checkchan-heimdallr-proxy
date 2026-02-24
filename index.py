@@ -9,13 +9,35 @@ import os
 #   logger.info('initializing')
 
 def handler(event, context):
-    evt = json.loads(event)
     logger = logging.getLogger()
-    logger.info('hello world')
-
     heimdallr_URL = os.getenv('heimdallr_URL')
+    logger.info(f'heimdallr_URL = {heimdallr_URL}')
     heimdallr_TOKEN = os.getenv('heimdallr_TOKEN')   
+    logger.info(f'heimdallr_TOKEN = {heimdallr_TOKEN}')
+
+    evt = json.loads(event)
+    body =evt.get("body")
+    if body is None:
+        logger.error('body is None')
+        return {
+            'statusCode': 400,
+            'body': 'body is None'
+        }  
+    else:
+        body = json.loads(body)
+        id = body.get("id")
+        logger.info(f'id = {id}')
+        url = body.get("url")
+        logger.info(f'url = {url}')
+        value = body.get("value")
+        logger.info(f'value = {value}')
+        html = body.get("html")
+        logger.info(f'html = {html}')
+        link = body.get("link")
+        logger.info(f'link = {link}')
+
+
     return {
         'statusCode': 200,
-        'body': f'heimdallr_URL = {heimdallr_URL}, heimdallr_TOKEN = {heimdallr_TOKEN}'
+        'body': f'body = {body}, heimdallr_URL = {heimdallr_URL}, heimdallr_TOKEN = {heimdallr_TOKEN}'
     }
