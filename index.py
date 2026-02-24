@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import requests
 import logging
 import json
 import os
@@ -13,7 +14,7 @@ def handler(event, context):
     heimdallr_URL = os.getenv('heimdallr_URL')
     logger.info(f'heimdallr_URL = {heimdallr_URL}')
     heimdallr_TOKEN = os.getenv('heimdallr_TOKEN')   
-    logger.info(f'heimdallr_TOKEN = {heimdallr_TOKEN}')
+    heimdallr_GROUP_KEY = os.getenv('heimdallr_GROUP_KEY')
 
     evt = json.loads(event)
     logger.info(f'evt = {evt}')
@@ -37,7 +38,15 @@ def handler(event, context):
         logger.info(f'html = {html}')
         link = body.get("link")
         logger.info(f'link = {link}')
+        data = body.get("data")
+        logger.info(f'data = {data}')
 
+    title = f'监测任务ID: {id}, 状态：{data}'
+    logger.info(f'title = {title}')
+    msg_type = 'markdown'
+    content = f'>**监控值** <font color=\"info\">{value}</font>  \n> [详情链接]({link})  *** {html}'
+    markdown = {"content": content}
+    logger.info(f'markdown = {markdown}')
 
     return {
         'statusCode': 200,
