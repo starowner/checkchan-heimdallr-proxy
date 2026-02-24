@@ -36,14 +36,13 @@ def handler(event, context):
     msg_type = 'text'
     # content = f'>**监控值** <font color=\"info\">{value}</font>  \n> [详情链接]({link})  *** {html}'
     # markdown = {"content": content}
-    text = {"content": f'{title}\n监控值:{value}\n<a href="{link}">详情链接</a>\n{html}'
-    }
+    text = f'监控值:{value}\n<a href="{link}">详情链接</a>\n{html}'
 
     payload = {
         "key": heimdallr_GROUP_KEY,
         "title": title,
         "msg_type": msg_type,
-        "text": text,
+        "body": text,
         "enable_duplicate_check": 1,
         "duplicate_check_interval": 1800
     }
