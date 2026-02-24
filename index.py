@@ -34,7 +34,7 @@ def handler(event, context):
 
     title = f'监测任务ID: {id}, 状态：{data}'
     msg_type = 'markdown'
-    text = f'>**监控值** \n \n ><font color=\"info\">{value}</font>  \n\n >[详情链接]({link})   \n *** \n {html}'
+    text = f'>**监控值** \n \n ><font color=\"info\">{value}</font>  \n\n >[详情链接]({link})  \n *** \n {html}'
     # markdown = {"content": content}
     # text = f'监控值:\n{value}\n\n<a href="{link}">详情链接</a>\n\n{html}'
 
