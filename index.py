@@ -61,8 +61,10 @@ def handler(event, context):
         "Authorization": f"Bearer {heimdallr_TOKEN}"
     }
 
-
+    response = requests.post(heimdallr_URL, json=payload, headers=headers, timeout=120)
+    logger.info(f'Heimdallr response status code: {response.status_code}')
+    logger.info(f'Heimdallr response body: {response.json()}')
     return {
         'statusCode': 200,
-        'body': requests.post(heimdallr_URL, json=payload, headers=headers, timeout=120).json()
+        'body': response.json()
     }
