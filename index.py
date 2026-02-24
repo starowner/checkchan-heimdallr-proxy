@@ -50,7 +50,7 @@ def handler(event, context):
         "Content-Type": "application/json",
         "Authorization": f"Bearer {heimdallr_TOKEN}"
     }
-    logger.info(f'Payload to Heimdallr: {payload}')
+    logger.info(f'headers: {headers}')
 
     response = requests.post(heimdallr_URL, json=payload, headers=headers, timeout=120)
     logger.info(f'Heimdallr response status code: {response.status_code}')
