@@ -64,5 +64,5 @@ def handler(event, context):
 
     return {
         'statusCode': 200,
-        'body': requests.post(heimdallr_URL, json=payload, headers=headers, timeout=10)
+        'body': requests.post(heimdallr_URL, json=payload, headers=headers, timeout=120).json()
     }
