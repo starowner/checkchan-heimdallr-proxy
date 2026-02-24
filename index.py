@@ -13,4 +13,4 @@ def handler(event, context):
     evt = json.loads(event)
     logger = logging.getLogger()
     logger.info('hello world')
-    return context
+    return event
