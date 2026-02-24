@@ -12,4 +12,10 @@ def handler(event, context):
     evt = json.loads(event)
     logger = logging.getLogger()
     logger.info('hello world')
-    return os.environ.get('heimdallr_URL')
+
+    heimdallr_URL = os.getenv('heimdallr_URL')
+    heimdallr_TOKEN = os.getenv('heimdallr_TOKEN')   
+    return {
+        'statusCode': 200,
+        'body': f'heimdallr_URL = {heimdallr_URL}, heimdallr_TOKEN = {heimdallr_TOKEN}'
+    }
