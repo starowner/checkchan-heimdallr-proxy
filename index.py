@@ -33,16 +33,23 @@ def handler(event, context):
         data = body.get("data")
 
     title = f'监测任务ID: {id}, 状态：{data}'
-    msg_type = 'markdown'
-    content = f'>**监控值** <font color=\"info\">{value}</font>  \n> [详情链接]({link})  *** {html}'
-    markdown = {"content": content}
-
+    msg_type = 'textcard'
+    # content = f'>**监控值** <font color=\"info\">{value}</font>  \n> [详情链接]({link})  *** {html}'
+    # markdown = {"content": content}
+    textcard = {
+            "title": title,
+            "description": f'监控值: {value}  \n{html}',
+            "url": url,
+            "btntxt": "详情链接"
+    }
 
     payload = {
         "key": heimdallr_GROUP_KEY,
         "title": title,
         "msg_type": msg_type,
-        "markdown": markdown
+        "textcard": textcard,
+        "enable_duplicate_check": 0,
+        "duplicate_check_interval": 1800
     }
     logger.info(f'payload = {payload}')
 
