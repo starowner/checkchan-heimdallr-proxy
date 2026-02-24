@@ -16,7 +16,9 @@ def handler(event, context):
     logger.info(f'heimdallr_TOKEN = {heimdallr_TOKEN}')
 
     evt = json.loads(event)
+    logger.info(f'evt = {evt}')
     body =evt.get("body")
+    logger.info(f'body = {body}')
     if body is None:
         logger.error('body is None')
         return {
