@@ -12,103 +12,114 @@ import os
 # def initializer(context):
 #   logger = logging.getLogger()
 #   logger.info('initializing')
-
 FONT_PATH = os.path.join(os.path.dirname(__file__), "NotoSansCJK-Regular.ttc")
 
-
-def html_to_image_file_then_base64(html_content, font_size=24):
+def html_to_base64_image(
+    html_content, 
+    font_size=24, 
+    font_color=(0, 0, 0), 
+    bg_color=(255, 255, 255), 
+    padding=20,
+    line_height_ratio=1.5,
+    width_limit=800
+):
     """
-    流程模拟：
-    1. HTML -> 内存图片对象
-    2. 图片对象 -> 保存到内存文件对象 (模拟写文件)
-    3. 内存文件对象 -> 读取二进制数据 (模拟读文件)
-    4. 二进制数据 -> Base64
-    
-    全程无物理磁盘 IO。
+    利用现有的 Pillow 库将 HTML 文本转换为 Base64 图片。
+    注意：此方法会去除 HTML 标签，仅渲染纯文本内容。
     """
     
-    # --- 步骤 0: 预处理文本 (去除标签) ---
+    # 1. 清洗 HTML 标签，提取纯文本
+    # 移除 script 和 style 内容
     text = re.sub(r'<script[^>]*>.*?</script>', '', html_content, flags=re.DOTALL | re.IGNORECASE)
     text = re.sub(r'<style[^>]*>.*?</style>', '', text, flags=re.DOTALL | re.IGNORECASE)
+    # 移除所有其他标签
     text = re.sub(r'<[^>]+>', '', text)
-    text = text.replace('&nbsp;', ' ').replace('&lt;', '<').replace('&gt;', '>')
+    # 还原常用实体字符
+    text = text.replace('&nbsp;', ' ').replace('&lt;', '<').replace('&gt;', '>').replace('&amp;', '&')
+    # 清理多余的空行
     lines = [line.strip() for line in text.split('\n') if line.strip()]
-    if not lines: lines = ["(无内容)"]
-
-    # --- 步骤 1: 加载字体 (必须指定本地字体以避免 FC 编码错误) ---
-    if not os.path.exists(FONT_PATH):
-        raise FileNotFoundError(f"错误：未找到字体文件 {FONT_PATH}。请在 FC 控制台上传 font.ttf 到代码根目录。")
     
-    font = ImageFont.truetype(FONT_PATH, font_size)
+    if not lines:
+        lines = ["(无内容)"]
 
-    # --- 步骤 2: 计算布局与绘制 (内存中创建图片对象) ---
+    # 2. 【核心修复】加载字体
+    # 检查字体文件是否存在
+    if not os.path.exists(FONT_PATH):
+        raise FileNotFoundError(f"字体文件未找到: {FONT_PATH}。请确保已将 .ttf 字体文件上传到函数代码根目录。")
+    
+    try:
+        # 强制使用上传的字体文件
+        font = ImageFont.truetype(FONT_PATH, font_size)
+    except Exception as e:
+        raise RuntimeError(f"字体加载失败: {e}。请检查字体文件是否损坏或格式不支持。")
+
+    # 3. 计算每行文本的换行与尺寸
+    # 由于 Pillow 不自动换行，我们需要手动根据 width_limit 进行折行
+    final_lines = []
+    
     temp_img = Image.new('RGB', (1, 1))
     draw_temp = ImageDraw.Draw(temp_img)
     
-    # 简单换行处理
-    final_lines = []
-    width_limit = 800
     for line in lines:
+        # 如果单行超过宽度限制，则手动截断换行
         current_line = line
         while True:
             bbox = draw_temp.textbbox((0, 0), current_line, font=font)
-            if (bbox[2] - bbox[0]) <= width_limit:
+            width = bbox[2] - bbox[0]
+            
+            if width <= width_limit:
                 final_lines.append(current_line)
                 break
-            # 强制截断
-            split_idx = max(1, len(current_line) // 2)
-            # 优化截断点：尝试找到最接近宽度的位置
-            low, high = 1, len(current_line)
-            best = 1
-            while low <= high:
-                mid = (low + high) // 2
-                sub_bbox = draw_temp.textbbox((0, 0), current_line[:mid], font=font)
-                if (sub_bbox[2] - sub_bbox[0]) <= width_limit:
-                    best = mid
-                    low = mid + 1
-                else:
-                    high = mid - 1
-            final_lines.append(current_line[:best])
-            current_line = current_line[best:]
-            if not current_line: break
+            else:
+                # 简单的按字符截断 (更复杂的需要按单词截断)
+                # 这里采用二分法或逐步减少字符来寻找最佳截断点
+                low, high = 1, len(current_line)
+                best_split = 1
+                while low <= high:
+                    mid = (low + high) // 2
+                    sub_text = current_line[:mid]
+                    bbox_sub = draw_temp.textbbox((0, 0), sub_text, font=font)
+                    if (bbox_sub[2] - bbox_sub[0]) <= width_limit:
+                        best_split = mid
+                        low = mid + 1
+                    else:
+                        high = mid - 1
+                
+                # 防止死循环，至少切一个字符
+                if best_split == 0: best_split = 1
+                
+                final_lines.append(current_line[:best_split])
+                current_line = current_line[best_split:]
+                
+                if not current_line:
+                    break
 
-    # 计算尺寸
-    line_height = int(font_size * 1.5)
-    padding = 20
-    img_w = width_limit + (padding * 2)
-    img_h = len(final_lines) * line_height + (padding * 2)
+    # 4. 计算图片总高度
+    line_height = int(font_size * line_height_ratio)
+    total_height = len(final_lines) * line_height
+    max_width = width_limit # 使用设定的最大宽度，或者可以动态计算最大行的宽度
     
-    # 绘制
-    img = Image.new('RGB', (img_w, img_h), color=(255, 255, 255))
+    img_width = max_width + (padding * 2)
+    img_height = total_height + (padding * 2)
+
+    # 5. 创建图片并绘制
+    img = Image.new('RGB', (img_width, img_height), color=bg_color)
     draw = ImageDraw.Draw(img)
-    y = padding
+    
+    current_y = padding
     for line in final_lines:
-        draw.text((padding, y), line, font=font, fill=(0, 0, 0))
-        y += line_height
+        draw.text((padding, current_y), line, font=font, fill=font_color)
+        current_y += line_height
 
-    # --- 步骤 3: 模拟“保存为文件” (写入内存缓冲区) ---
-    # 创建一个 BytesIO 对象，它在内存中表现得像一个打开的文件
-    memory_file = io.BytesIO()
+    # 6. 转为 Base64 (内存操作)
+    buffered = io.BytesIO()
+    img.save(buffered, format="PNG", optimize=True)
+    img_bytes = buffered.getvalue()
     
-    # 将图片“保存”到这个内存文件中 (格式 PNG)
-    img.save(memory_file, format='PNG')
+    base64_str = base64.b64encode(img_bytes).decode('utf-8')
     
-    # 【关键】模拟文件读写切换：将指针移回文件开头
-    # 就像你写完文件后，如果要读它，必须先 close 再 open，或者 seek(0)
-    memory_file.seek(0)
-    
-    # --- 步骤 4: 模拟“读取文件内容” ---
-    # 从内存文件中读取所有二进制数据
-    image_bytes = memory_file.read()
-    
-    # 此时 memory_file 可以被关闭或丢弃，我们拿到了纯二进制数据
-    del memory_file
-
-    # --- 步骤 5: 转为 Base64 ---
-    base64_str = base64.b64encode(image_bytes).decode('utf-8')
-    
-    # return f"data:image/png;base64,{base64_str}"
-    return base64_str
+    return f"data:image/png;base64,{base64_str}"
+    # return base64_str
 
 
 
