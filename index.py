@@ -118,8 +118,8 @@ def html_to_base64_image(
     
     base64_str = base64.b64encode(img_bytes).decode('utf-8')
     
-    # return f"data:image/png;base64,{base64_str}"
-    return base64_str
+    return f"data:image/png;base64,{base64_str}"
+    # return base64_str
 
 
 
