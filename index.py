@@ -12,6 +12,7 @@ import os
 # def initializer(context):
 #   logger = logging.getLogger()
 #   logger.info('initializing')
+FONT_PATH = os.path.join(os.path.dirname(__file__), "NotoSansCJK-Regular.ttc")
 
 def html_to_base64_image(
     html_content, 
@@ -41,41 +42,16 @@ def html_to_base64_image(
     if not lines:
         lines = ["(无内容)"]
 
-    # 2. 加载字体 (关键步骤：适配不同操作系统环境)
-    font_path = None
-    # 常见中文字体路径列表
-    candidate_fonts = [
-        # Linux (阿里云 ECS/FC 常见路径)
-        "/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc",
-        "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
-        "/usr/share/fonts/chinese/TrueType/simsun.ttc", 
-        # Windows
-        "C:/Windows/Fonts/simhei.ttf",
-        "C:/Windows/Fonts/msyh.ttc", # 微软雅黑
-        # Mac
-        "/System/Library/Fonts/PingFang.ttc",
-        "/Library/Fonts/Arial Unicode.ttf",
-        # 当前目录
-        "simhei.ttf",
-        "NotoSansCJK-Regular.ttc"
-    ]
-    
-    for path in candidate_fonts:
-        if os.path.exists(path):
-            font_path = path
-            break
+    # 2. 【核心修复】加载字体
+    # 检查字体文件是否存在
+    if not os.path.exists(FONT_PATH):
+        raise FileNotFoundError(f"字体文件未找到: {FONT_PATH}。请确保已将 .ttf 字体文件上传到函数代码根目录。")
     
     try:
-        if font_path:
-            font = ImageFont.truetype(font_path, font_size)
-        else:
-            # 如果找不到中文字体，尝试使用默认字体 (仅支持英文，中文会乱码)
-            # 在阿里云 FC 等环境中，建议上传一个 .ttf 文件到项目目录并指定
-            logging.error("警告：未找到中文字体文件，将使用默认字体。中文可能显示为方框。")
-            font = ImageFont.load_default()
+        # 强制使用上传的字体文件
+        font = ImageFont.truetype(FONT_PATH, font_size)
     except Exception as e:
-        logging.error(f"字体加载错误: {e}")
-        font = ImageFont.load_default()
+        raise RuntimeError(f"字体加载失败: {e}。请检查字体文件是否损坏或格式不支持。")
 
     # 3. 计算每行文本的换行与尺寸
     # 由于 Pillow 不自动换行，我们需要手动根据 width_limit 进行折行
